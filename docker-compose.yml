@@ -61,8 +61,6 @@ services:
       dockerfile: ./dockerfiles/Dockerfile.consumer
     container_name: consumer
     restart: always
-    ports:
-      - "${CONSUMER_PORT}:${CONSUMER_PORT}"
     depends_on:
       rabbitmq:
         condition: service_healthy

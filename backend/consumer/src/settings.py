@@ -32,7 +32,6 @@ class Settings(BaseSettings):
         case_sensitive=True,
     )
 
-    consumer_port: int = Field(default=5001, validation_alias="CONSUMER_PORT")
     max_webhook_attempts: int = Field(default=3, validation_alias="MAX_WEBHOOK_ATTEMPTS")
     max_message_attempts: int = Field(default=3, validation_alias="MAX_MESSAGE_ATTEMPTS")
     postgres: PostgresSettings = Field(default_factory=PostgresSettings)
