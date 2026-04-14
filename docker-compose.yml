@@ -1,0 +1,135 @@
+services:
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.postgres
+    container_name: postgres
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB_PROD: ${POSTGRES_DB_PROD}
+      POSTGRES_USER_PROD: ${POSTGRES_USER_PROD}
+      POSTGRES_PASSWORD_PROD: ${POSTGRES_PASSWORD_PROD}
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    volumes:
+      - './dev_data/postgres_data:/var/lib/postgresql/data'
+    networks:
+      - app-network
+
+  api:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.api
+    container_name: api
+    restart: always
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - API_KEY=${API_KEY}
+      - API_PORT=${API_PORT}
+      - DOMAIN_URL=${DOMAIN_URL}
+      - API_ENDPOINT=${DOMAIN_URL}:${API_PORT}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB_PROD=${POSTGRES_DB_PROD}
+      - POSTGRES_USER_PROD=${POSTGRES_USER_PROD}
+      - POSTGRES_PASSWORD_PROD=${POSTGRES_PASSWORD_PROD}
+      - PG_URL=postgresql+asyncpg://${POSTGRES_USER_PROD}:${POSTGRES_PASSWORD_PROD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB_PROD}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - './backend/api/src:/app/src'
+      - './backend/common/src/common:/app/common'
+    networks:
+      - app-network
+
+  consumer:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.consumer
+    container_name: consumer
+    restart: always
+    ports:
+      - "${CONSUMER_PORT}:${CONSUMER_PORT}"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:${RABBITMQ_PORT}/
+      - PG_URL=postgresql+asyncpg://${POSTGRES_USER_PROD}:${POSTGRES_PASSWORD_PROD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB_PROD}
+      - RABBITMQ_PAYMENTS_NEW_QUEUE=${RABBITMQ_PAYMENTS_NEW_QUEUE}
+      - RABBITMQ_PAYMENTS_NEW_DLQ_QUEUE=${RABBITMQ_PAYMENTS_NEW_DLQ_QUEUE}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - './backend/consumer/src:/app/src'
+      - './backend/common/src/common:/app/common'
+    networks:
+      - app-network
+
+  publisher:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.publisher
+    container_name: publisher
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@${RABBITMQ_HOST}:${RABBITMQ_PORT}/
+      - PG_URL=postgresql+asyncpg://${POSTGRES_USER_PROD}:${POSTGRES_PASSWORD_PROD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB_PROD}
+      - RABBITMQ_PAYMENTS_NEW_QUEUE=${RABBITMQ_PAYMENTS_NEW_QUEUE}
+      - OUTBOX_POLL_INTERVAL_S=${OUTBOX_POLL_INTERVAL_S}
+      - OUTBOX_BATCH_SIZE=${OUTBOX_BATCH_SIZE}
+      - OUTBOX_MAX_ATTEMPTS=${OUTBOX_MAX_ATTEMPTS}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - './backend/publisher/src:/app/src'
+      - './backend/common/src/common:/app/common'
+    networks:
+      - app-network
+
+  rabbitmq:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.rabbitmq
+    container_name: rabbitmq
+    restart: always
+    healthcheck:
+      test: 
+        - "CMD-SHELL"
+        - "rabbitmq-diagnostics -q ping && rabbitmqctl await_startup"
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    ports:
+      - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
+      - "${RABBITMQ_PORT_UI}:${RABBITMQ_PORT_UI}"
+    env_file:
+      - .env
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    volumes:
+      - './dev_data/rabbitmq_data:/var/lib/rabbitmq'
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    driver: bridge

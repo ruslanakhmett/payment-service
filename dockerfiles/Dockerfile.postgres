@@ -1,0 +1,4 @@
+FROM postgres:17
+
+COPY --chmod=0755 /scripts/common.sh /docker-entrypoint-initdb.d/common.sh
+COPY --chmod=0755 /scripts/init-postgres.sh /docker-entrypoint-initdb.d/init-postgres.sh

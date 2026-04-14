@@ -1,0 +1,6 @@
+FROM rabbitmq:3-management
+
+COPY --chmod=0755 ./scripts/common.sh /common.sh
+COPY --chmod=0755 ./scripts/rabbitmq-entrypoint.sh /rabbitmq-entrypoint.sh
+
+ENTRYPOINT ["/rabbitmq-entrypoint.sh"]
