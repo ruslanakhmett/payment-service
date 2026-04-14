@@ -102,7 +102,7 @@ async def health_check():
     )
 
 
-# http://api:5000/api/v1/webhook/test
+# http://api:5005/api/v1/webhook/test
 @webhook_router.post("/test", status_code=status.HTTP_200_OK)
 async def accept_webhook_test(payload: dict):
     print(f"[webhook:test] received: {payload!r}")

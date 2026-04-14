@@ -25,7 +25,7 @@ docker compose up --build
 
 3) Откройте:
 
-- **Swagger UI**: `http://localhost:5000/docs`
+- **Swagger UI**: `http://localhost:5005/docs`
 - **RabbitMQ Management UI**: `http://localhost:15672` (логин/пароль в `.env`)
 
 
@@ -39,7 +39,7 @@ Compose читает настройки из файла`.env`.
 Запрос:
 ```bash
 curl -X 'POST' \
-  'http://localhost:5000/api/v1/payments' \
+  'http://localhost:5005/api/v1/payments' \
   -H 'accept: application/json' \
   -H 'Idempotency-Key: test123' \
   -H 'X-API-Key: dev_api_key_change_me' \
@@ -51,7 +51,7 @@ curl -X 'POST' \
   "metadata": {
     "additionalProp1": {}
   },
-  "webhook_url": "http://api:5000/api/v1/webhook/test"
+  "webhook_url": "http://api:5005/api/v1/webhook/test"
 }'
 ```
 
@@ -68,7 +68,7 @@ curl -X 'POST' \
 ### ПОЛУЧИТЬ ПЛАТЕЖ
 ```bash
 curl -X 'GET' \
-  'http://localhost:5000/api/v1/payments/d5c0b26e-45ee-407c-932e-b70e4818c27a' \
+  'http://localhost:5005/api/v1/payments/d5c0b26e-45ee-407c-932e-b70e4818c27a' \
   -H 'accept: application/json' \
   -H 'X-API-Key: dev_api_key_change_me'
 ```
@@ -83,7 +83,7 @@ curl -X 'GET' \
   "metadata": {
     "additionalProp1": {}
   },
-  "webhook_url": "http://api:5000/api/v1/webhook/test",
+  "webhook_url": "http://api:5005/api/v1/webhook/test",
   "status": "succeeded",
   "created_at": "2026-04-14T12:10:32.632757Z",
   "processed_at": "2026-04-14T12:10:37.594011Z"

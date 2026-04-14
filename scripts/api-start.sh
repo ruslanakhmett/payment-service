@@ -160,4 +160,4 @@ log_msg "INFO" "startup" "tables_check" "42" "database tables verified successfu
 
 log_msg "INFO" "startup" "app_start" "237" "Starting application..."
 
-uvicorn src.main:app --host 0.0.0.0 --port 5000
+uvicorn src.main:app --host 0.0.0.0 --port "${API_PORT:-5005}"
